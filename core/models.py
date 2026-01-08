@@ -1,6 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# UserProfile extends Django's built-in User model to store application-specific
+# information such as role (business/worker), phone number, and address.
+# Each user has exactly one profile (OneToOne relationship), and the profile
+# is automatically deleted when the user is deleted.
 class UserProfile(models.Model):
     ROLE_CHOICES = [('business', 'Business'), ('worker', 'Worker')]
     user = models.OneToOneField(User, on_delete=models.CASCADE)

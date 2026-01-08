@@ -17,11 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView
-from core.views import TaskListCreateView, TaskDetailView
+from core.views import TaskListCreateView, TaskDetailView, RegisterView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/tasks/', TaskListCreateView.as_view(), name='task-list'),
     path('api/tasks/<int:pk>/', TaskDetailView.as_view(), name='task-detail'),
     path('api/auth/token/', TokenObtainPairView.as_view(), name='token'),
+    path('api/register/', RegisterView.as_view(), name='register'),
 ]
