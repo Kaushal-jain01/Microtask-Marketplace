@@ -9,7 +9,8 @@ from rest_framework.exceptions import PermissionDenied
 from .models import Task
 from .serializers import TaskSerializer, RegisterSerializer, ProfileSerializer
 from .models import UserProfile
-
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.utils import timezone
 
 class TaskListCreateView(generics.ListCreateAPIView):
     serializer_class = TaskSerializer
@@ -111,7 +112,7 @@ class WorkerTasksView(generics.ListAPIView):
             )
         return Task.objects.none()
     
-    
+
 class ClaimTaskView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -136,14 +137,23 @@ class ClaimTaskView(APIView):
 
 class CompleteTaskView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
     
     def patch(self, request, pk):
         task = get_object_or_404(Task, pk=pk, worker=request.user)
         
+        if task.status != 'claimed':
+            return Response({"error": "Task must be claimed first"}, status=400)
+        
+        # Upload proof image
+        if 'proof_image' in request.data:
+            task.proof_image = request.data['proof_image']
+        
         task.status = 'completed'
+        task.completed_at = timezone.now()
         task.save()
         
         return Response({
-            "message": "Task marked complete! Waiting for business approval.",
+            "message": "✅ Task completed with proof! Waiting business review.",
             "task": TaskSerializer(task).data
         })

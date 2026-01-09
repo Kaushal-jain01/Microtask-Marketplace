@@ -19,6 +19,7 @@ class TaskSerializer(serializers.ModelSerializer):
     # - Client CANNOT send or change business data
     # - Backend sets business automatically (request.user)
     business = UserSerializer(read_only=True)
+    proof_image = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = Task
