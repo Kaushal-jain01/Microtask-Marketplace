@@ -31,6 +31,7 @@ class Task(models.Model):
     proof_image = models.ImageField(upload_to='proofs/', blank=True, null=True)
     duration_minutes = models.IntegerField(default=15)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_paid = models.BooleanField(default=False)
 
 
 class Payment(models.Model):

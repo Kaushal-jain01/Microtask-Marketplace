@@ -170,40 +170,43 @@ class ApproveTaskView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, pk):
-        try:
-            task = get_object_or_404(Task, pk=pk, business=request.user, status='completed')
-            
-            intent = stripe.PaymentIntent.create(
-                amount=int(task.price * 100),
-                currency='inr',
-                metadata={'task_id': str(task.id)},
-            )
-            
-            payment = Payment.objects.create(
-                task=task,
-                stripe_payment_intent_id=intent.id,
-                amount=task.price,
-                status='pending'
-            )
-            
-            task.status = 'approved'
-            task.save()
-            
-            return Response({
-                'message': '✅ Task approved! Payment required.',
-                'client_secret': intent.client_secret,
-                'payment_id': str(payment.id)
-            })
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
+        task = get_object_or_404(Task, pk=pk, business=request.user, status='completed')
+        
+        intent = stripe.PaymentIntent.create(
+            amount=int(task.price * 100),
+            currency='inr',
+            metadata={'task_id': str(task.id)},
+            automatic_payment_methods={
+                'enabled': True,
+                'allow_redirects': 'never'  # No 3DS!
+            }
+            # NO payment_method_types = FIXED!
+        )
+        
+        payment = Payment.objects.create(
+            task=task,
+            stripe_payment_intent_id=intent.id,
+            amount=task.price,
+            status='pending'
+        )
+        
+        task.status = 'approved'
+        task.save()
+        
+        return Response({
+            'message': '✅ Task approved! Payment required.',
+            'client_secret': intent.client_secret,
+            'payment_id': str(payment.id)
+        })
 
 
 # Webhook (Stripe calls this)
+# core/views.py - REPLACE your stripe_webhook with this:
 @csrf_exempt
 @require_http_methods(["POST"])
 def stripe_webhook(request):
     payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     
     try:
         event = stripe.Webhook.construct_event(
@@ -214,17 +217,32 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError:
         return JsonResponse({'error': 'Invalid signature'}, status=400)
 
+    # Handle successful payment
     if event['type'] == 'payment_intent.succeeded':
         payment_intent = event['data']['object']
-        payment_id = payment_intent['metadata']['task_id']
-        
+        # FIXED: Get payment by intent_id, not task_id
         payment = Payment.objects.get(stripe_payment_intent_id=payment_intent['id'])
         payment.status = 'paid'
         payment.save()
         
-        # Mark task as paid
         task = payment.task
-        task.is_paid = True  # Add this field to Task model
+        task.status = 'paid'  # Use status instead of is_paid
+        task.is_paid = True
         task.save()
+        
+        print(f"✅ Task {task.id} PAID: {task.title}")
 
-    return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'success'}, status=200)
+
+
+# @api_view(['GET'])
+# def stripe_success(request):
+#     payment_intent_id = request.GET.get('payment_intent')
+#     client_secret = request.GET.get('payment_intent_client_secret')
+    
+#     return Response({
+#         'message': '✅ Payment Success!',
+#         'payment_intent': payment_intent_id,
+#         'client_secret': client_secret,
+#         'status': 'completed'
+#     }, status=status.HTTP_200_OK)
