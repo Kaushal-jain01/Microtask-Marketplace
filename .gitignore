@@ -3,6 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+media/
+
 # C extensions
 *.so
 
@@ -205,3 +207,14 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# React
+frontend/node_modules/
+frontend/build/
+
+# OS / Editor
+.vscode/
+.idea/
+.DS_Store
+
