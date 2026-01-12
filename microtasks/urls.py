@@ -45,6 +45,12 @@ urlpatterns = [
     path('api/business-tasks/', BusinessTasksView.as_view(), name='business-tasks'),
     path('api/worker-tasks/', WorkerTasksView.as_view(), name='worker-tasks'),
 
+    # Tasks Filtering
+    path('api/worker-open-tasks/', WorkerOpenTasksView.as_view()),
+    path('api/worker-my-tasks/', WorkerMyTasksView.as_view()), 
+    path('api/business-posted-tasks/', BusinessPostedTasksView.as_view()),
+    path('api/business-claimed-tasks/', BusinessClaimedTasksView.as_view()),
+
     # Claiming & Completing tasks by Workers
     path('api/tasks/<int:pk>/claim/', ClaimTaskView.as_view(), name='claim-task'),
     path('api/tasks/<int:pk>/complete/', CompleteTaskView.as_view(), name='complete-task'),

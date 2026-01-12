@@ -5,29 +5,44 @@ import { PlusCircle, CheckCircle, Shield, User } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('open');
+  const [activeTab, setActiveTab] = useState(
+    user?.role === 'business' ? 'posted' : 'open'
+  );
 
+  // 🔹 Fetch tasks whenever the tab changes or user loads
   useEffect(() => {
-      fetchTasks();
-  },[]);
+    if (!user) return;
+    fetchTasks(activeTab);
+  }, [activeTab, user]);
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (tab) => {
+    setLoading(true);
     try {
-      let endpoint = `${API_BASE}/tasks/`;
+      let endpoint = '';
 
-      console.log("User:",user)
-      if (user.role === 'business') endpoint = `${API_BASE}/business-tasks/`;
-      else if (user.role === 'worker') endpoint = `${API_BASE}/worker-tasks/`;
+      if (user.role === 'worker') {
+        if (tab === 'open') endpoint = `${API_BASE}/worker-open-tasks/`;
+        else if (tab === 'my') endpoint = `${API_BASE}/worker-my-tasks/`;
+      } else if (user.role === 'business') {
+        if (tab === 'posted') endpoint = `${API_BASE}/business-posted-tasks/`;
+        else if (tab === 'claimed') endpoint = `${API_BASE}/business-claimed-tasks/`;
+      }
+
+      if (!endpoint) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
 
       const { data } = await axios.get(endpoint);
       setTasks(data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -63,7 +78,6 @@ export default function Dashboard() {
             <Shield className="me-2" size={28} />
             <h2 className="navbar-brand mb-0 h4 fw-bold">Microtasks</h2>
           </div>
-          
           <div className="d-flex align-items-center">
             <span className="navbar-text me-3">
               <User size={20} className="me-1" /> {user.username}
@@ -89,31 +103,45 @@ export default function Dashboard() {
         <div className="row mb-4">
           <div className="col-12">
             <ul className="nav nav-tabs border-0 bg-white shadow-sm rounded-top">
-              <li className="nav-item">
-                <button 
-                  className={`nav-link ${activeTab === 'open' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('open')}
-                >
-                  Open Tasks
-                </button>
-              </li>
-              <li className="nav-item">
-                <button 
-                  className={`nav-link ${activeTab === 'my' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('my')}
-                >
-                  My Tasks
-                </button>
-              </li>
+              {user.role === 'worker' && (
+                <>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'open' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('open')}
+                    >
+                      Open Tasks
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'my' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('my')}
+                    >
+                      My Tasks
+                    </button>
+                  </li>
+                </>
+              )}
               {user.role === 'business' && (
-                <li className="nav-item">
-                  <button 
-                    className={`nav-link ${activeTab === 'posted' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('posted')}
-                  >
-                    Posted Tasks
-                  </button>
-                </li>
+                <>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'posted' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('posted')}
+                    >
+                      Posted Tasks
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${activeTab === 'claimed' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('claimed')}
+                    >
+                      Claimed Tasks
+                    </button>
+                  </li>
+                </>
               )}
             </ul>
           </div>
@@ -121,6 +149,14 @@ export default function Dashboard() {
 
         {/* Tasks Grid */}
         <div className="row g-4">
+          {tasks.length === 0 && (
+            <div className="col-12 text-center py-5">
+              <Shield size={64} className="text-muted mb-4 opacity-50" />
+              <h3 className="fw-bold text-muted mb-3">No tasks found</h3>
+              <p className="text-muted mb-4">Check back later for new opportunities</p>
+            </div>
+          )}
+
           {tasks.map((task) => (
             <div key={task.id} className="col-lg-4 col-md-6">
               <div className="card h-100 shadow-sm border-0 hover-shadow">
@@ -141,27 +177,27 @@ export default function Dashboard() {
                   </p>
 
                   <div className="d-flex gap-2">
-                    {task.status === 'open' && user.role === 'worker' && (
+                    {/* Worker buttons */}
+                    {user.role === 'worker' && task.status === 'open' && (
                       <button className="btn btn-success w-100">
                         <PlusCircle size={18} className="me-1" />
                         Claim Task
                       </button>
                     )}
-                    
-                    {task.status === 'claimed' && user.role === 'worker' && (
+                    {user.role === 'worker' && task.status === 'claimed' && (
                       <button className="btn btn-primary w-100">
                         <CheckCircle size={18} className="me-1" />
                         Upload Proof
                       </button>
                     )}
 
-                    {task.status === 'completed' && user.role === 'business' && (
+                    {/* Business buttons */}
+                    {user.role === 'business' && task.status === 'completed' && (
                       <button className="btn btn-outline-primary w-100">
                         Review & Approve
                       </button>
                     )}
-
-                    {task.status === 'approved' && (
+                    {user.role === 'business' && task.status === 'approved' && (
                       <button className="btn btn-success w-100">
                         Pay Now
                       </button>
@@ -172,24 +208,15 @@ export default function Dashboard() {
             </div>
           ))}
 
-          {tasks.length === 0 && (
+          {/* Post New Task Button */}
+          {user.role === 'business' && activeTab === 'posted' && (
             <div className="col-12 text-center py-5">
-              <Shield size={64} className="text-muted mb-4 opacity-50" />
-              <h3 className="fw-bold text-muted mb-3">No tasks found</h3>
-              <p className="text-muted mb-4">Check back later for new opportunities</p>
-              
+              <button className="btn btn-primary btn-lg">
+                <PlusCircle size={20} className="me-2" />
+                Post New Task
+              </button>
             </div>
           )}
-
-          <div className="col-12 text-center py-5">
-          {user.role === 'business' && (
-                <button className="btn btn-primary btn-lg">
-                  <PlusCircle size={20} className="me-2" />
-                  Post New Task
-                </button>
-              )}
-          </div>
-
         </div>
       </div>
     </div>

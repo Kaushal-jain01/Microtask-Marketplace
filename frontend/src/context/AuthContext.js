@@ -1,74 +1,59 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const useAuth = () => useContext(AuthContext);
+// ✅ NAMED EXPORT
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
 
-// AuthProvider is the component that fills the AuthContext with data. 
-// So every page inside AppContent can access auth data.
+// ✅ NAMED EXPORT
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  if (token) {
-    try {
-      const decoded = jwtDecode(token);
-      
-      // IMMEDIATELY set basic user
-      setUser({ id: decoded.user_id, username: `User-${decoded.user_id}`, role: 'worker' });
-      setLoading(false);  // ✅ IMMEDIATE!
-      
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      
-      // Update with profile data later
-      axios.get(`${API_BASE}/profile/`).then(response => {
-        setUser({
-          id: decoded.user_id,
-          username: response.data.username,
-          role: response.data.role
-        });
-      });
-      
-    } catch {
-      localStorage.removeItem('token');
+    if (!token) {
       setLoading(false);
+      return;
     }
-  } else {
-    setLoading(false);
-  }
+
+    const loadUser = async () => {
+      try {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+        const { data } = await axios.get(`${API_BASE}/profile/`);
+
+        setUser({
+          id: data.id,
+          username: data.username,
+          role: data.role,
+        });
+      } catch (err) {
+        localStorage.removeItem('token');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
   }, [token]);
 
-
-  // const login = async (username, password) => {
-  //   const { data } = await axios.post(`${API_BASE}/auth/token/`, { username, password });
-  //   localStorage.setItem('token', data.access);
-  //   setToken(data.access);
-  //   axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`;
-  // };
   const login = async (username, password) => {
-    const response = await axios.post(`${API_BASE}/auth/token/`, { username, password });
-    const token = response.data.access;
-    
-    localStorage.setItem('token', token);
-    const decoded = jwtDecode(token);
-    
-    // ✅ IMMEDIATELY set user (don't wait for useEffect)
-    setUser({ 
-      id: decoded.user_id, 
-      username: `User-${decoded.user_id}`,
-      role: 'worker'
+    setLoading(true); 
+    const { data } = await axios.post(`${API_BASE}/auth/token/`, {
+      username,
+      password,
     });
-    
-    // Set axios header AFTER user is set
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  };
 
+    localStorage.setItem('token', data.access);
+    setToken(data.access); // triggers useEffect
+  };
 
   const logout = () => {
     localStorage.removeItem('token');

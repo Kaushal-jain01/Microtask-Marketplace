@@ -120,6 +120,48 @@ class WorkerTasksView(generics.ListAPIView):
             )
         return Task.objects.none()
     
+# WORKER: Only open tasks (status=open, not claimed by anyone)
+class WorkerOpenTasksView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Task.objects.filter(
+            status='open'  # Only unclaimed tasks
+        ).order_by('-created_at')
+
+# WORKER: Only THEIR tasks (claimed, completed)
+class WorkerMyTasksView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Task.objects.filter(
+            worker=self.request.user,  # Only THEIR tasks
+            status__in=['claimed', 'completed', 'approved']
+        ).order_by('-created_at')
+
+# BUSINESS: THEIR posted tasks
+class BusinessPostedTasksView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Task.objects.filter(
+            business=self.request.user  # Only THEIR tasks
+        ).order_by('-created_at')
+
+# BUSINESS: Tasks claimed by workers (they need to review)
+class BusinessClaimedTasksView(generics.ListAPIView):
+    serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Task.objects.filter(
+            business=self.request.user,
+            status='claimed'
+        ).order_by('-created_at')
+
 
 class ClaimTaskView(APIView):
     permission_classes = [IsAuthenticated]
