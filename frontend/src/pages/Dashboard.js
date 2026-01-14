@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { PlusCircle, CheckCircle, Shield, User } from 'lucide-react';
+import { Elements } from "@stripe/react-stripe-js";
+import { stripePromise } from "../stripe";
+import StripePayment from "../components/StripePayment";
 
 const API_BASE = 'https://microtasks-api.onrender.com/api';
 
@@ -13,7 +16,10 @@ export default function Dashboard() {
     user?.role === 'business' ? 'posted' : 'open'
   );
 
-  // 🔹 Fetch tasks whenever the tab changes or user loads
+  const [clientSecret, setClientSecret] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
+
+  /* 🔹 Fetch tasks */
   useEffect(() => {
     if (!user) return;
     fetchTasks(activeTab);
@@ -34,53 +40,93 @@ export default function Dashboard() {
 
       if (!endpoint) {
         setTasks([]);
-        setLoading(false);
         return;
       }
 
       const { data } = await axios.get(endpoint);
       setTasks(data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
+    } catch (err) {
+      console.error("Fetch tasks failed", err);
       setTasks([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleApprove = async (taskId) => {
+    try {
+      const token = localStorage.getItem("access");
+
+      await axios.post(
+        `${API_BASE}/tasks/${taskId}/approve/`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      fetchTasks(activeTab);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Failed to approve task");
+    }
+  };
+
+  const handlePayNow = async (taskId) => {
+    try {
+      const token = localStorage.getItem("access");
+
+      const res = await axios.post(
+        `${API_BASE}/tasks/${taskId}/pay/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setClientSecret(res.data.client_secret);
+      setShowPayment(true);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Failed to initiate payment");
+    }
+  };
+
+
   const getStatusBadge = (status) => {
     const badges = {
       open: 'bg-success text-white',
       claimed: 'bg-warning text-dark',
-      completed: 'bg-info text-dark', 
+      completed: 'bg-info text-dark',
       approved: 'bg-primary text-white',
-      paid: 'bg-success text-white'
+      paid: 'bg-success text-white',
     };
     return badges[status] || 'bg-secondary';
   };
 
+  /* 🔹 Loading screen */
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+        <div className="spinner-border text-primary" role="status" />
       </div>
     );
   }
 
   return (
     <div className="min-vh-100 bg-light">
-      {/* Header */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+
+      {/* 🔹 Navbar */}
+      <nav className="navbar navbar-dark bg-primary shadow-sm">
         <div className="container">
           <div className="d-flex align-items-center">
-            <Shield className="me-2" size={28} />
-            <h2 className="navbar-brand mb-0 h4 fw-bold">Microtasks</h2>
+            <Shield className="me-2" size={26} />
+            <h4 className="mb-0 fw-bold">Microtasks</h4>
           </div>
           <div className="d-flex align-items-center">
-            <span className="navbar-text me-3">
-              <User size={20} className="me-1" /> {user.username}
+            <span className="me-3 text-white">
+              <User size={18} className="me-1" />
+              {user.username}
             </span>
             <button onClick={logout} className="btn btn-outline-light btn-sm">
               Logout
@@ -90,135 +136,140 @@ export default function Dashboard() {
       </nav>
 
       <div className="container-fluid py-4">
-        {/* Role Badge */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <span className={`badge fs-6 px-3 py-2 ${user.role === 'business' ? 'bg-primary' : 'bg-success'}`}>
-              {user.role === 'business' ? '🏢 Business' : '👷 Worker'}
-            </span>
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <ul className="nav nav-tabs border-0 bg-white shadow-sm rounded-top">
-              {user.role === 'worker' && (
-                <>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeTab === 'open' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('open')}
-                    >
-                      Open Tasks
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeTab === 'my' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('my')}
-                    >
-                      My Tasks
-                    </button>
-                  </li>
-                </>
-              )}
-              {user.role === 'business' && (
-                <>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeTab === 'posted' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('posted')}
-                    >
-                      Posted Tasks
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${activeTab === 'claimed' ? 'active' : ''}`}
-                      onClick={() => setActiveTab('claimed')}
-                    >
-                      Claimed Tasks
-                    </button>
-                  </li>
-                </>
-              )}
-            </ul>
-          </div>
-        </div>
+        {/* 🔹 Role Badge */}
+        <span className={`badge fs-6 mb-4 ${
+          user.role === 'business' ? 'bg-primary' : 'bg-success'
+        }`}>
+          {user.role === 'business' ? '🏢 Business' : '👷 Worker'}
+        </span>
 
-        {/* Tasks Grid */}
+        {/* 🔹 Tabs */}
+        <ul className="nav nav-tabs bg-white shadow-sm rounded mb-4">
+          {user.role === 'worker' && (
+            <>
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${activeTab === 'open' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('open')}
+                >
+                  Open Tasks
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${activeTab === 'my' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('my')}
+                >
+                  My Tasks
+                </button>
+              </li>
+            </>
+          )}
+
+          {user.role === 'business' && (
+            <>
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${activeTab === 'posted' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('posted')}
+                >
+                  Posted Tasks
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link ${activeTab === 'claimed' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('claimed')}
+                >
+                  Claimed Tasks
+                </button>
+              </li>
+            </>
+          )}
+        </ul>
+
+        {/* 🔹 Tasks */}
         <div className="row g-4">
           {tasks.length === 0 && (
-            <div className="col-12 text-center py-5">
-              <Shield size={64} className="text-muted mb-4 opacity-50" />
-              <h3 className="fw-bold text-muted mb-3">No tasks found</h3>
-              <p className="text-muted mb-4">Check back later for new opportunities</p>
+            <div className="text-center text-muted py-5">
+              <Shield size={60} className="mb-3 opacity-50" />
+              <h5>No tasks found</h5>
             </div>
           )}
 
-          {tasks.map((task) => (
+          {tasks.map(task => (
             <div key={task.id} className="col-lg-4 col-md-6">
-              <div className="card h-100 shadow-sm border-0 hover-shadow">
-                <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <span className={`badge ${getStatusBadge(task.status)} px-3 py-2 fs-6 fw-semibold`}>
+              <div className="card h-100 shadow-sm">
+                <div className="card-body">
+
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className={`badge ${getStatusBadge(task.status)}`}>
                       {task.status.toUpperCase()}
                     </span>
-                    <div className="text-end">
-                      <div className="h5 fw-bold text-primary mb-0">₹{task.price}</div>
-                      <small className="text-muted">Reward</small>
-                    </div>
+                    <strong className="text-primary">₹{task.price}</strong>
                   </div>
 
-                  <h5 className="card-title fw-bold text-dark mb-3">{task.title}</h5>
-                  <p className="card-text text-muted mb-4" style={{ height: '60px', overflow: 'hidden' }}>
+                  <h5>{task.title}</h5>
+                  <p className="text-muted small">
                     {task.description}
                   </p>
 
-                  <div className="d-flex gap-2">
-                    {/* Worker buttons */}
-                    {user.role === 'worker' && task.status === 'open' && (
-                      <button className="btn btn-success w-100">
-                        <PlusCircle size={18} className="me-1" />
-                        Claim Task
-                      </button>
-                    )}
-                    {user.role === 'worker' && task.status === 'claimed' && (
-                      <button className="btn btn-primary w-100">
-                        <CheckCircle size={18} className="me-1" />
-                        Upload Proof
-                      </button>
-                    )}
+                  {user.role === 'business' && task.status === 'completed' && (
+                    <button
+                      className="btn btn-primary w-100 mb-2"
+                      onClick={() => handleApprove(task.id)}
+                    >
+                      Approve Task
+                    </button>
+                  )}
 
-                    {/* Business buttons */}
-                    {user.role === 'business' && task.status === 'completed' && (
-                      <button className="btn btn-outline-primary w-100">
-                        Review & Approve
-                      </button>
-                    )}
-                    {user.role === 'business' && task.status === 'approved' && (
-                      <button className="btn btn-success w-100">
-                        Pay Now
-                      </button>
-                    )}
-                  </div>
+                  {/* 🔹 Actions */}
+                  {user.role === 'business' && task.status === 'approved' && (
+                    <button
+                      className="btn btn-success w-100"
+                      disabled={showPayment}
+                      onClick={() => handlePayNow(task.id)}
+                    >
+                      Pay Now
+                    </button>
+                  )}
+
                 </div>
               </div>
             </div>
           ))}
-
-          {/* Post New Task Button */}
-          {user.role === 'business' && activeTab === 'posted' && (
-            <div className="col-12 text-center py-5">
-              <button className="btn btn-primary btn-lg">
-                <PlusCircle size={20} className="me-2" />
-                Post New Task
-              </button>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* 🔹 Stripe Modal (SINGLE INSTANCE) */}
+      {showPayment && clientSecret && (
+        <div className="modal show d-block bg-dark bg-opacity-50">
+          <div className="modal-dialog">
+            <div className="modal-content p-4">
+              <h5 className="mb-3">Complete Payment</h5>
+
+              <Elements stripe={stripePromise}>
+                <StripePayment
+                  clientSecret={clientSecret}
+                  onSuccess={() => {
+                    setShowPayment(false);
+                    fetchTasks(activeTab);
+                  }}
+                />
+              </Elements>
+
+              <button
+                className="btn btn-secondary mt-3 w-100"
+                onClick={() => setShowPayment(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

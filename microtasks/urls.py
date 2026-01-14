@@ -56,7 +56,8 @@ urlpatterns = [
     path('api/tasks/<int:pk>/complete/', CompleteTaskView.as_view(), name='complete-task'),
 
     # Approving Task
-    path('api/tasks/<int:pk>/approve/', ApproveTaskView.as_view(), name='approve-task'),
+    path('api/tasks/<int:pk>/approve/', ApproveTaskView.as_view()),
+    path('api/tasks/<int:pk>/pay/', PayTaskView.as_view()),
 
     # Payments
     path('stripe/webhook/', stripe_webhook, name='stripe-webhook'),

@@ -212,39 +212,43 @@ class ApproveTaskView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, pk):
-        task = get_object_or_404(Task, pk=pk, business=request.user, status="completed")
-
-        # 1️⃣ Create customer
-        customer = stripe.Customer.create(
-            name=request.user.username,
-            email=request.user.email,
-            address={
-                "line1": "Business Address",
-                "city": "Mumbai",
-                "state": "MH",
-                "postal_code": "400001",
-                "country": "IN",
-            },
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            business=request.user,
+            status="completed"
         )
 
-        # 2️⃣ Create payment intent
+        task.status = "approved"
+        task.save()
+
+        return Response({"message": "Task approved"})
+
+
+class PayTaskView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        task = get_object_or_404(
+            Task,
+            pk=pk,
+            business=request.user,
+            status="approved"
+        )
+
         intent = stripe.PaymentIntent.create(
             amount=int(task.price * 100),
             currency="inr",
-            customer=customer.id,
-            description=f"Service payment for task {task.title}",
+            description=f"Payment for task {task.title}",
             automatic_payment_methods={"enabled": True},
         )
 
-        payment = Payment.objects.create(
+        Payment.objects.create(
             task=task,
             stripe_payment_intent_id=intent.id,
             amount=task.price,
             status="pending",
         )
-
-        task.status = "approved"
-        task.save()
 
         return Response({
             "client_secret": intent.client_secret
