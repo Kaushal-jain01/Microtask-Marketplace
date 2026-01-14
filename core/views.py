@@ -138,7 +138,7 @@ class WorkerMyTasksView(generics.ListAPIView):
     def get_queryset(self):
         return Task.objects.filter(
             worker=self.request.user,  # Only THEIR tasks
-            status__in=['claimed', 'completed', 'approved']
+            status__in=['claimed', 'completed', 'approved', 'paid']
         ).order_by('-created_at')
 
 # BUSINESS: THEIR posted tasks

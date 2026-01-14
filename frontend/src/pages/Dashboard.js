@@ -55,7 +55,7 @@ export default function Dashboard() {
 
   const handleApprove = async (taskId) => {
     try {
-      const token = localStorage.getItem("access");
+      const token = localStorage.getItem("token");
 
       await axios.post(
         `${API_BASE}/tasks/${taskId}/approve/`,
@@ -72,7 +72,7 @@ export default function Dashboard() {
 
   const handlePayNow = async (taskId) => {
     try {
-      const token = localStorage.getItem("access");
+      const token = localStorage.getItem("token");
 
       const res = await axios.post(
         `${API_BASE}/tasks/${taskId}/pay/`,

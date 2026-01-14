@@ -14,6 +14,15 @@ export default function StripePayment({ clientSecret, onSuccess }) {
       {
         payment_method: {
           card: elements.getElement(CardElement),
+          billing_details: {
+            name: 'ABC',
+            address: {
+                line1: 'xyz',
+                city: 'def',
+                country: 'IN',
+                postal_code: 'xxxxx',
+            },
+            },
         },
       }
     );
