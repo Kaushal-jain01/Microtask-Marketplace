@@ -36,14 +36,28 @@ class TaskListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Task.objects.filter(
-            models.Q(status='open') |
-            models.Q(created_by=user) |
-            models.Q(claimed_by=user)
-        ).order_by('-updated_at')
+        queryset = Task.objects.all()
+
+        # Filter by status if query param is provided
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+
+        # Filter by type if provided: posted, claimed, history
+        type_filter = self.request.query_params.get('type')
+        if type_filter == 'posted':
+            queryset = queryset.filter(created_by=user)
+        elif type_filter == 'claimed':
+            queryset = queryset.filter(claimed_by=user)
+        elif type_filter == 'history':
+            queryset = queryset.filter(Q(status='completed') | Q(status='approved') | Q(status='paid'))
+
+        # Default ordering
+        return queryset.order_by('-updated_at')
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
 
 
 # ============================

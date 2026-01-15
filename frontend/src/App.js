@@ -3,45 +3,96 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import WorkerDashboard from './pages/WorkerDashboard';
-import BusinessDashboard from './pages/BusinessDashboard';
+import Dashboard from './pages/Dashboard';
+import PostedTasks from './pages/PostedTasks';
+import ClaimedTasks from './pages/ClaimedTasks';
+import TaskHistory from './pages/TaskHistory';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+// Spinner while loading auth state
+function LoadingSpinner() {
+  return (
+    <div className="d-flex justify-content-center align-items-center vh-100">
+      <div className="spinner-border" role="status" />
+    </div>
+  );
+}
+
+// Protect routes for authenticated users
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading)
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border" role="status" />
-      </div>
-    );
 
+  if (loading) return <LoadingSpinner />;
   return user ? children : <Navigate to="/login" />;
 }
 
-function DashboardRouter() {
-  const { user } = useAuth();
+// Redirect logged-in users away from login/register
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth();
 
-  // redirect based on role
-  if (!user) return null; // or spinner if needed
-  return user.role === 'worker' ? <WorkerDashboard /> : <BusinessDashboard />;
+  if (loading) return <LoadingSpinner />;
+  return user ? <Navigate to="/dashboard" /> : children;
 }
 
 function AppContent() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Public routes */}
+        <Route 
+          path="/login" 
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          } 
+        />
+        <Route 
+          path="/register" 
+          element={
+            <PublicRoute>
+              <Register />
+            </PublicRoute>
+          } 
+        />
+
+        {/* Dashboard routes */}
         <Route 
           path="/dashboard" 
           element={
             <ProtectedRoute>
-              <DashboardRouter />
+              <Dashboard activeTab="open" />
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/dashboard/posted" 
+          element={
+            <ProtectedRoute>
+              <PostedTasks />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard/claimed" 
+          element={
+            <ProtectedRoute>
+              <ClaimedTasks />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard/history" 
+          element={
+            <ProtectedRoute>
+              <TaskHistory />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Default route */}
         <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to="/" />} /> {/* catch-all */}
       </Routes>
     </Router>
   );
