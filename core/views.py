@@ -45,8 +45,18 @@ class TaskListCreateView(generics.ListCreateAPIView):
         if type_filter == 'posted':
             queryset = queryset.filter(created_by=user)
 
-        elif type_filter == 'claimed':
-            queryset = queryset.filter(claimed_by=user)
+        if type_filter == 'claimed':
+            # Users claimed tasks that are NOT completed, approved, or paid
+            queryset = queryset.filter(
+                Q(claimed_by=user) & ~Q(status__in=['completed', 'approved', 'paid'])
+            )
+
+        elif type_filter == 'completed':
+            # Tasks claimed by user that are completed
+            queryset = queryset.filter(
+                claimed_by=user,
+                status='completed'
+            )
 
         elif type_filter == 'history':
             queryset = queryset.filter(

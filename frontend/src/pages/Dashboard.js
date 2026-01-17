@@ -86,6 +86,7 @@ export default function Dashboard() {
     ? [
         { label: 'Dashboard', path: '/dashboard' },
         { label: 'Claimed Tasks', path: '/dashboard/claimed' },
+        { label: 'Completed Tasks', path: '/dashboard/completed' },
         { label: 'History', path: '/dashboard/history' },
       ]
     : [

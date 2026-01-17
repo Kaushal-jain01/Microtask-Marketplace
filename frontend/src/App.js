@@ -8,6 +8,7 @@ import PostedTasks from './pages/PostedTasks';
 import ClaimedTasks from './pages/ClaimedTasks';
 import TaskHistory from './pages/TaskHistory';
 import CreateTask from './pages/CreateTask';
+import CompletedTasks from './pages/CompletedTasks';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Spinner while loading auth state
@@ -79,6 +80,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <ClaimedTasks />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard/completed" 
+          element={
+            <ProtectedRoute>
+              <CompletedTasks />
             </ProtectedRoute>
           } 
         />
