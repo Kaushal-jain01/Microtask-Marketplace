@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE from '../config/api';
+import { useNavigate } from 'react-router-dom';
+
 
 export default function PostedTasks() {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -79,6 +82,13 @@ export default function PostedTasks() {
                   Price: ₹{task.price} | Duration: {task.duration_minutes} mins
                 </small>
               </p>
+              <button
+                className="btn btn-primary btn-sm mt-2"
+                onClick={() => navigate(`/tasks/detail/${task.id}`)}
+              >
+                View Details
+              </button>
+
 
               {/* COMMENTS */}
               <div className="mt-3">

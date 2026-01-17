@@ -1,6 +1,6 @@
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-export default function StripePayment({ clientSecret, onSuccess }) {
+export default function StripePayment({ clientSecret, onSuccess, billing_details }) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -15,14 +15,14 @@ export default function StripePayment({ clientSecret, onSuccess }) {
         payment_method: {
           card: elements.getElement(CardElement),
           billing_details: {
-            name: 'ABC',
+            name: billing_details.name,
             address: {
-                line1: 'xyz',
-                city: 'def',
-                country: 'IN',
-                postal_code: 'xxxxx',
+              line1: billing_details.address.line1,
+              city: billing_details.address.city,
+              country: billing_details.address.country,
+              postal_code: billing_details.address.postal_code,
             },
-            },
+          },
         },
       }
     );

@@ -9,6 +9,7 @@ import ClaimedTasks from './pages/ClaimedTasks';
 import TaskHistory from './pages/TaskHistory';
 import CreateTask from './pages/CreateTask';
 import CompletedTasks from './pages/CompletedTasks';
+import TaskDetail from './pages/TaskDetails';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Spinner while loading auth state
@@ -107,6 +108,15 @@ function AppContent() {
             </ProtectedRoute>
           }
         />
+       <Route
+        path="/tasks/detail/:id"
+        element={
+          <ProtectedRoute>
+            <TaskDetail />
+          </ProtectedRoute>
+        }
+      />
+
 
         {/* Default route */}
         <Route path="/" element={<Navigate to="/login" />} />
