@@ -11,14 +11,15 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(""); // reset previous error
     try {
       await login(username, password);
-      console.log("login success")
-      navigate('/dashboard');
-    } catch {
-      setError('Invalid credentials');
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
     }
   };
+
 
   return (
     <div className="vh-100 d-flex align-items-center justify-content-center bg-light">

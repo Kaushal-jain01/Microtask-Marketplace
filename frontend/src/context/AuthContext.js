@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       try {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        const { data } = await axios.get(`${API_BASE}/profile/`);
+        const { data } = await axios.get(`${API_BASE}/auth/profile/`);
 
         setUser({
           id: data.id,
@@ -45,15 +45,31 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (username, password) => {
-    setLoading(true); 
-    const { data } = await axios.post(`${API_BASE}/auth/token/`, {
-      username,
-      password,
-    });
+    setLoading(true);
+    try {
+      const { data } = await axios.post(`${API_BASE}/auth/token/`, { username, password });
+      localStorage.setItem('token', data.access);
+      setToken(data.access);
 
-    localStorage.setItem('token', data.access);
-    setToken(data.access); // triggers useEffect
+      // Set Authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${data.access}`;
+
+      // Fetch user profile immediately
+      const profile = await axios.get(`${API_BASE}/auth/profile/`);
+      setUser({
+        id: profile.data.id,
+        username: profile.data.username,
+        role: profile.data.role,
+      });
+
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+      if (err.response?.status === 401) throw new Error("Invalid credentials");
+      else throw new Error("Something went wrong. Try again.");
+    }
   };
+
 
   const logout = () => {
     localStorage.removeItem('token');
