@@ -71,7 +71,6 @@ class TaskCommentSerializer(serializers.ModelSerializer):
         model = TaskComment
         fields = [
             'id',
-            'task',
             'user',
             'message',
             'created_at',
@@ -82,6 +81,7 @@ class TaskCommentSerializer(serializers.ModelSerializer):
             'user',
             'created_at',
         ]
+
 
 class TaskDetailSerializer(TaskSerializer):
     completion = TaskCompletionSerializer(read_only=True)
