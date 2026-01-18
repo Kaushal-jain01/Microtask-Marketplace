@@ -271,6 +271,7 @@ class PayTaskView(APIView):
             currency="inr",
             description=f"Payment for task {task.title}",
             automatic_payment_methods={"enabled": True},
+            receipt_email=request.user.email, 
         )
 
         # Record payment in DB (status pending)
