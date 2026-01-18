@@ -47,7 +47,9 @@ class TaskListCreateView(generics.ListCreateAPIView):
         type_filter = self.request.query_params.get('type')
 
         if type_filter == 'posted':
-            queryset = queryset.filter(created_by=user)
+            queryset = queryset.filter(
+                Q(created_by=user) & ~Q(status__in=['paid'])
+            )
 
         if type_filter == 'claimed':
             # Users claimed tasks that are NOT completed, approved, or paid

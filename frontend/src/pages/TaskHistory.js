@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_BASE from '../config/api';
+import { useNavigate } from 'react-router-dom';
 
 // const API_BASE = 'https://microtasks-api.onrender.com/api';
 
 export default function ClaimedTasks({ userId }) {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,6 +45,12 @@ export default function ClaimedTasks({ userId }) {
                   Price: ₹{task.price} | Duration: {task.duration_minutes} mins
                 </small>
               </p>
+              <button
+                className="btn btn-primary btn-sm mt-2"
+                onClick={() => navigate(`/tasks/detail/${task.id}`)}
+              >
+                View Details
+              </button>
             </div>
           </div>
         ))
