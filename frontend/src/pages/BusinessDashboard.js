@@ -7,7 +7,6 @@ import { stripePromise } from "../stripe";
 import StripePayment from "../components/StripePayment";
 import API_BASE from '../config/api';
 
-// const API_BASE = 'https://microtasks-api.onrender.com/api';
 
 export default function BusinessDashboard() {
   const { user, logout } = useAuth();

@@ -5,9 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 urlpatterns = [
 
-    # ============================
     # AUTH / PROFILE
-    # ============================
     path("auth/register/", RegisterView.as_view(), name="register"),
     path('auth/token/', TokenObtainPairView.as_view(), name='token'),
     
@@ -15,9 +13,8 @@ urlpatterns = [
     path("auth/profile/update/", ProfileUpdateView.as_view(), name="profile-update"),
     path("auth/profile/<str:username>/", PublicProfileView.as_view(), name="public-profile"),
 
-    # ============================
+
     # TASKS
-    # ============================
     path("tasks/", TaskListCreateView.as_view(), name="task-list-create"),
     path("tasks/<int:pk>/", TaskDetailView.as_view(), name="task-detail"),
 
@@ -30,15 +27,13 @@ urlpatterns = [
     # Discussion
     path("tasks/<int:pk>/comments/", TaskCommentListCreateView.as_view(), name="task-comments"),
 
-
-    # ============================
     # STRIPE WEBHOOK
-    # ============================
     path("stripe/webhook/", stripe_webhook, name="stripe-webhook"),
 
-
-    # ============================
     # USERS (ADMIN ONLY)
-    # ============================
     path("users/", GetAllUsers.as_view(), name="all-users"),
+
+    # Dashboard Stats
+    path("dashboard/business/", business_dashboard_view),
+    path("dashboard/worker/", worker_dashboard_view),
 ]

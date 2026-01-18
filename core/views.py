@@ -14,6 +14,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from rest_framework.decorators import api_view, permission_classes
+from .services import business_dashboard_stats, worker_dashboard_stats, invalidate_dashboard_cache
+
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -21,6 +24,7 @@ import stripe
 
 from .models import *
 from .serializers import *
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -314,6 +318,8 @@ def stripe_webhook(request):
         task.updated_at = timezone.now()
         task.save()
 
+        invalidate_dashboard_cache(task)
+
         print(f"✅ Task {task.id} PAID")
 
     return JsonResponse({"status": "success"})
@@ -368,3 +374,22 @@ class GetAllUsers(generics.ListAPIView):
     serializer_class = UserSerializer
     permission_classes = [IsAdminUser]
     queryset = User.objects.all()
+
+
+
+
+# ============================
+# DASHBOARD STATS
+# ============================
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def business_dashboard_view(request):
+    data = business_dashboard_stats(request.user.id)
+    return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def worker_dashboard_view(request):
+    data = worker_dashboard_stats(request.user.id)
+    return Response(data)

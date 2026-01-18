@@ -42,10 +42,14 @@ export default function Dashboard() {
 
   const fetchWorkerStats = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/users/${user.id}/metrics`);
+      const res = await axios.get(`${API_BASE}/dashboard/worker/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
       setStats(res.data);
     } catch (err) {
-      console.error('Error fetching stats:', err);
+      console.error('Error fetching business stats:', err);
     }
   };
 
@@ -68,7 +72,11 @@ export default function Dashboard() {
   // --------------------
   const fetchBusinessStats = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/users/${user.id}/business-metrics`);
+      const res = await axios.get(`${API_BASE}/dashboard/business/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
       setStats(res.data);
     } catch (err) {
       console.error('Error fetching business stats:', err);
@@ -152,7 +160,7 @@ export default function Dashboard() {
                   <User className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Claimed</p>
-                    <h6>{stats.tasksClaimed}</h6>
+                    <h6>{stats.claimed}</h6>
                   </div>
                 </div>
               </div>
@@ -162,7 +170,7 @@ export default function Dashboard() {
                   <CheckCircle className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Completed</p>
-                    <h6>{stats.tasksCompleted}</h6>
+                    <h6>{stats.completed}</h6>
                   </div>
                 </div>
               </div>
@@ -172,7 +180,7 @@ export default function Dashboard() {
                   <Shield className="me-2" />
                   <div>
                     <p className="mb-0">Total Earnings</p>
-                    <h6>₹{stats.totalEarnings}</h6>
+                    <h6>₹{stats.total_earnings}</h6>
                   </div>
                 </div>
               </div>
@@ -184,7 +192,7 @@ export default function Dashboard() {
                   <User className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Posted</p>
-                    <h6>{stats.tasksPosted}</h6>
+                    <h6>{stats.posted}</h6>
                   </div>
                 </div>
               </div>
@@ -194,7 +202,7 @@ export default function Dashboard() {
                   <CheckCircle className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Pending</p>
-                    <h6>{stats.tasksPending}</h6>
+                    <h6>{stats.pending}</h6>
                   </div>
                 </div>
               </div>
@@ -204,7 +212,7 @@ export default function Dashboard() {
                   <Shield className="me-2" />
                   <div>
                     <p className="mb-0">Total Amount Paid</p>
-                    <h6>₹{stats.totalPaid}</h6>
+                    <h6>₹{stats.total_paid_amount}</h6>
                   </div>
                 </div>
               </div>
