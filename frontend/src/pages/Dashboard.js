@@ -44,7 +44,7 @@ export default function Dashboard() {
     try {
       const res = await axios.get(`${API_BASE}/dashboard/worker/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
       setStats(res.data);
@@ -74,7 +74,7 @@ export default function Dashboard() {
     try {
       const res = await axios.get(`${API_BASE}/dashboard/business/`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
       },
     });
       setStats(res.data);

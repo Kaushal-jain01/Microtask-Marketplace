@@ -74,7 +74,8 @@ class TaskListCreateView(generics.ListCreateAPIView):
         if self.request.user.userprofile.role != 'business':
             raise PermissionDenied("Only business users can create tasks.")
 
-        serializer.save(created_by=self.request.user)
+        task = serializer.save(created_by=self.request.user)
+        invalidate_dashboard_cache(task)
 
 
 # ============================
@@ -121,6 +122,8 @@ class ClaimTaskView(APIView):
         task.claimed_by = request.user
         task.status = 'claimed'
         task.save()
+
+        invalidate_dashboard_cache(task)
 
         return Response(
             TaskSerializer(task).data,
@@ -174,6 +177,8 @@ class CompleteTaskView(APIView):
         # Update task status
         task.status = 'completed'
         task.save()
+
+        invalidate_dashboard_cache(task)
 
         return Response(
             {
@@ -229,6 +234,8 @@ class ApproveTaskView(APIView):
 
         task.status = 'approved'
         task.save()
+
+        invalidate_dashboard_cache(task)
 
         return Response({
             "message": "✅ Task approved",
