@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import PostedTasks from './pages/PostedTasks';
 import ClaimedTasks from './pages/ClaimedTasks';
@@ -60,46 +61,22 @@ function AppContent() {
         />
 
         {/* Dashboard routes */}
-        <Route 
-          path="/dashboard" 
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard activeTab="open" />
+              <DashboardLayout />
             </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/dashboard/posted" 
-          element={
-            <ProtectedRoute>
-              <PostedTasks />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/dashboard/claimed" 
-          element={
-            <ProtectedRoute>
-              <ClaimedTasks />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/dashboard/completed" 
-          element={
-            <ProtectedRoute>
-              <CompletedTasks />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/dashboard/history" 
-          element={
-            <ProtectedRoute>
-              <TaskHistory />
-            </ProtectedRoute>
-          } 
-        />
+          }
+        >
+          <Route index element={<Dashboard />} />
+
+          <Route path="posted" element={<PostedTasks />} />
+          <Route path="claimed" element={<ClaimedTasks />} />
+          <Route path="completed" element={<CompletedTasks />} />
+          <Route path="history" element={<TaskHistory />} />
+        </Route>
+
         <Route
           path="/tasks/create"
           element={

@@ -87,36 +87,13 @@ export default function Dashboard() {
     navigate('/tasks/create'); // Navigate to a create task page/modal
   };
 
-  // --------------------
-  // Sidebar Links
-  // --------------------
-  const sidebarLinks = user?.role === 'worker'
-    ? [
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Claimed Tasks', path: '/dashboard/claimed' },
-        { label: 'Completed Tasks', path: '/dashboard/completed' },
-        { label: 'History', path: '/dashboard/history' },
-      ]
-    : [
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Posted Tasks', path: '/dashboard/posted' },
-        { label: 'History', path: '/dashboard/history' },
-      ];
 
   return (
     <div className="container-fluid vh-100">
       <div className="row h-100">
-        {/* Sidebar */}
-        <div className="col-2 bg-light p-3 d-flex flex-column">
-          <h5 className="mb-4">Dashboard</h5>
-          {sidebarLinks.map(link => (
-            <Link key={link.path} to={link.path} className="mb-2">{link.label}</Link>
-          ))}
-          <button className="btn btn-outline-danger mt-auto" onClick={logout}>Logout</button>
-        </div>
 
         {/* Main Content */}
-        <div className="col-7 p-3 overflow-auto" style={{ maxHeight: '100vh' }}>
+        <div className="col-8 p-3 overflow-auto" style={{ maxHeight: '100vh' }}>
           {user?.role === 'worker' ? (
             <>
               <h4>Open Tasks</h4>
@@ -151,7 +128,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Panel */}
-        <div className="col-3 bg-light p-3">
+        <div className="col-4 bg-light p-3">
           <h5>Stats</h5>
           {user?.role === 'worker' ? (
             <>
