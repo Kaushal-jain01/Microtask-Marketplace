@@ -97,7 +97,7 @@ export default function Dashboard() {
     const openCount = data.open;
     const claimedCount = data.claimed;
     const postedCount = data.posted;
-    const completedCount = data.pending;
+    const completedCount = data.paid;
     
     console.log(postedCount)
 
@@ -108,9 +108,13 @@ export default function Dashboard() {
           label: 'Tasks',
           data: [openCount, claimedCount, completedCount],
           backgroundColor: ['#0d6efd', '#ffc107', '#198754'],
+          borderRadius: 6,           // Rounded bars
+          barPercentage: 0.6,        // Thinner bars
+          categoryPercentage: 0.5,
         },
       ],
     });
+
   } catch (err) {
     console.error('Error fetching business stats:', err);
   }
@@ -194,8 +198,39 @@ export default function Dashboard() {
                 {chartData.datasets && chartData.datasets.length > 0 ? (
                   <Bar
                     data={chartData}
-                    options={{ responsive: true, plugins: { legend: { display: false } } }}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          display: false,
+                        },
+                        tooltip: {
+                          backgroundColor: '#333',
+                          titleColor: '#fff',
+                          bodyColor: '#fff',
+                          titleFont: { weight: 'bold' },
+                        },
+                      },
+                      scales: {
+                        x: {
+                          grid: { display: false },
+                          ticks: { font: { size: 14, weight: 'bold' } },
+                        },
+                        y: {
+                          beginAtZero: true,
+                          grid: {
+                            color: '#e0e0e0',
+                            borderDash: [5, 5],
+                          },
+                          ticks: {
+                            stepSize: 1,
+                            font: { size: 14 },
+                          },
+                        },
+                      },
+                    }}
                   />
+
                 ) : <p>Loading chart...</p>}
               </div>
             </>
@@ -255,7 +290,7 @@ export default function Dashboard() {
                   <CheckCircle className="me-2" />
                   <div>
                     <p className="mb-0">Active Tasks</p>
-                    <h6>{stats.active || 0}</h6>
+                    <h6>{stats.claimed || 0}</h6>
                   </div>
                 </div>
               </div>
@@ -266,16 +301,6 @@ export default function Dashboard() {
                   <div>
                     <p className="mb-0">Total Paid</p>
                     <h6>₹{stats.total_paid_amount || 0}</h6>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card mb-2">
-                <div className="card-body d-flex align-items-center">
-                  <User className="me-2" />
-                  <div>
-                    <p className="mb-0">Revenue This Month</p>
-                    <h6>₹{stats.revenue_this_month || 0}</h6>
                   </div>
                 </div>
               </div>
