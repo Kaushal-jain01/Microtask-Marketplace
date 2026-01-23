@@ -63,7 +63,7 @@ class TaskCompletionSerializer(serializers.ModelSerializer):
 
 # Task comment
 class TaskCommentSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = TaskComment
