@@ -92,12 +92,7 @@ export default function PostedTasks() {
 
               {/* COMMENTS */}
               <div className="mt-3">
-                <button
-                  className="btn btn-link p-0"
-                  onClick={() => fetchComments(task.id)}
-                >
-                  View Comments
-                </button>
+                
 
                 {comments[task.id] && (
                   <div className="mt-2">
@@ -113,21 +108,7 @@ export default function PostedTasks() {
                       </div>
                     ))}
 
-                    {/* Add comment */}
-                    <div className="d-flex mt-2">
-                      <input
-                        className="form-control me-2"
-                        placeholder="Add a comment..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                      />
-                      <button
-                        className="btn btn-sm btn-secondary"
-                        onClick={() => handleAddComment(task.id)}
-                      >
-                        Send
-                      </button>
-                    </div>
+                    
                   </div>
                 )}
               </div>

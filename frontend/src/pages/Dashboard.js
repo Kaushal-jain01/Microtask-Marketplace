@@ -5,8 +5,18 @@ import axios from 'axios';
 import API_BASE from '../config/api';
 import { PlusCircle, CheckCircle, Shield, User } from 'lucide-react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
-// const API_BASE = 'https://microtasks-api.onrender.com/api';
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -15,6 +25,10 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
+  const [chartData, setChartData] = useState({
+    labels: ['Open', 'Claimed', 'Completed'],
+    datasets: [],
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -32,7 +46,7 @@ export default function Dashboard() {
   const fetchOpenTasks = async () => {
     try {
       const res = await axios.get(`${API_BASE}/tasks/?status=open`);
-      setTasks(res.data);
+      setTasks(res.data || []);
     } catch (err) {
       console.error('Error fetching tasks:', err);
     } finally {
@@ -43,20 +57,18 @@ export default function Dashboard() {
   const fetchWorkerStats = async () => {
     try {
       const res = await axios.get(`${API_BASE}/dashboard/worker/`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-      setStats(res.data);
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      setStats(res.data || {});
     } catch (err) {
-      console.error('Error fetching business stats:', err);
+      console.error('Error fetching worker stats:', err);
     }
   };
 
   const handleClaim = async (taskId) => {
     try {
       await axios.patch(`${API_BASE}/tasks/${taskId}/claim/`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       alert('Task claimed successfully!');
       fetchOpenTasks();
@@ -71,28 +83,56 @@ export default function Dashboard() {
   // Business Functions
   // --------------------
   const fetchBusinessStats = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/dashboard/business/`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
+  try {
+    const res = await axios.get(`${API_BASE}/dashboard/business/`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-      setStats(res.data);
-    } catch (err) {
-      console.error('Error fetching business stats:', err);
-    }
-  };
+
+    const data = res.data || {};
+    setStats(data);
+
+    console.log(data)
+
+    // Compute chart data from recent_tasks if available
+    const openCount = data.open;
+    const claimedCount = data.claimed;
+    const postedCount = data.posted;
+    const completedCount = data.pending;
+    
+    console.log(postedCount)
+
+    setChartData({
+      labels: ['Open', 'Claimed', 'Completed'],
+      datasets: [
+        {
+          label: 'Tasks',
+          data: [openCount, claimedCount, completedCount],
+          backgroundColor: ['#0d6efd', '#ffc107', '#198754'],
+        },
+      ],
+    });
+  } catch (err) {
+    console.error('Error fetching business stats:', err);
+  }
+};
 
   const handleCreateTask = () => {
-    navigate('/tasks/create'); // Navigate to a create task page/modal
+    navigate('/tasks/create');
   };
 
+  const handleEditTask = (taskId) => {
+    navigate(`/tasks/edit/${taskId}`);
+  };
+
+  const handleRemindWorker = (taskId) => {
+    alert(`Reminder sent for task ${taskId}`);
+  };
 
   return (
     <div className="container-fluid vh-100">
       <div className="row h-100">
 
-        {/* Main Content */}
+        {/* Main Panel */}
         <div className="col-8 p-3 overflow-auto" style={{ maxHeight: '100vh' }}>
           {user?.role === 'worker' ? (
             <>
@@ -102,27 +142,62 @@ export default function Dashboard() {
                   <div className="spinner-border" role="status" />
                 </div>
               ) : (
-                tasks.map(task => (
-                  <div key={task.id} className="card mb-3">
-                    <div className="card-body">
-                      <h5 className="card-title">{task.title}</h5>
-                      <p className="card-text">{task.description}</p>
-                      <p className="card-text">
-                        <small className="text-muted">Price: ₹{task.price} | Duration: {task.duration_minutes} mins</small>
-                      </p>
-                      <button className="btn btn-primary" onClick={() => handleClaim(task.id)}>Claim Task</button>
+                tasks.length > 0 ? (
+                  tasks.map(task => (
+                    <div key={task.id} className="card mb-3">
+                      <div className="card-body">
+                        <h5 className="card-title">{task.title}</h5>
+                        <p className="card-text">{task.description}</p>
+                        <p className="card-text">
+                          <small className="text-muted">Price: ₹{task.price} | Duration: {task.duration_minutes} mins</small>
+                        </p>
+                        <button className="btn btn-primary" onClick={() => handleClaim(task.id)}>Claim Task</button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
+                ) : <p>No open tasks available.</p>
               )}
-              {tasks.length === 0 && !loading && <p>No open tasks available.</p>}
             </>
           ) : (
             <>
-              <h4>Business Dashboard</h4>
-              <button className="btn btn-success mb-3" onClick={handleCreateTask}>
-                <PlusCircle className="me-2" /> Create Task
-              </button>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h4>Business Dashboard</h4>
+                <button className="btn btn-success" onClick={handleCreateTask}>
+                  <PlusCircle className="me-2" /> Create Task
+                </button>
+              </div>
+
+              {/* Recently Posted Tasks */}
+              <h5>Recently Posted Tasks</h5>
+              {(stats.recent_tasks || []).length > 0 ? (
+                (stats.recent_tasks || []).map(task => (
+                  <div key={task.id} className="card mb-2">
+                    <div className="card-body d-flex justify-content-between align-items-center">
+                      <div>
+                        <h6>{task.title}</h6>
+                        <small className="text-muted">{task.status} | ₹{task.price}</small>
+                      </div>
+                      <div>
+                        <button className="btn btn-sm btn-primary me-1" onClick={() => handleEditTask(task.id)}>Edit</button>
+                        <button className="btn btn-sm btn-warning" onClick={() => handleRemindWorker(task.id)}>Remind</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p>No recent tasks.</p>
+              )}
+
+              {/* Task Status Chart */}
+              <div className="mt-4">
+                <h5>Task Status Overview</h5>
+                {chartData.datasets && chartData.datasets.length > 0 ? (
+                  <Bar
+                    data={chartData}
+                    options={{ responsive: true, plugins: { legend: { display: false } } }}
+                  />
+                ) : <p>Loading chart...</p>}
+              </div>
             </>
           )}
         </div>
@@ -137,7 +212,7 @@ export default function Dashboard() {
                   <User className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Claimed</p>
-                    <h6>{stats.claimed}</h6>
+                    <h6>{stats.claimed || 0}</h6>
                   </div>
                 </div>
               </div>
@@ -147,7 +222,7 @@ export default function Dashboard() {
                   <CheckCircle className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Completed</p>
-                    <h6>{stats.completed}</h6>
+                    <h6>{stats.completed || 0}</h6>
                   </div>
                 </div>
               </div>
@@ -157,19 +232,20 @@ export default function Dashboard() {
                   <Shield className="me-2" />
                   <div>
                     <p className="mb-0">Total Earnings</p>
-                    <h6>₹{stats.total_earnings}</h6>
+                    <h6>₹{stats.total_earnings || 0}</h6>
                   </div>
                 </div>
               </div>
             </>
           ) : (
             <>
+              {/* Business Stats */}
               <div className="card mb-2">
                 <div className="card-body d-flex align-items-center">
                   <User className="me-2" />
                   <div>
                     <p className="mb-0">Tasks Posted</p>
-                    <h6>{stats.posted}</h6>
+                    <h6>{stats.posted || 0}</h6>
                   </div>
                 </div>
               </div>
@@ -178,8 +254,8 @@ export default function Dashboard() {
                 <div className="card-body d-flex align-items-center">
                   <CheckCircle className="me-2" />
                   <div>
-                    <p className="mb-0">Tasks Pending</p>
-                    <h6>{stats.pending}</h6>
+                    <p className="mb-0">Active Tasks</p>
+                    <h6>{stats.active || 0}</h6>
                   </div>
                 </div>
               </div>
@@ -188,11 +264,33 @@ export default function Dashboard() {
                 <div className="card-body d-flex align-items-center">
                   <Shield className="me-2" />
                   <div>
-                    <p className="mb-0">Total Amount Paid</p>
-                    <h6>₹{stats.total_paid_amount}</h6>
+                    <p className="mb-0">Total Paid</p>
+                    <h6>₹{stats.total_paid_amount || 0}</h6>
                   </div>
                 </div>
               </div>
+
+              <div className="card mb-2">
+                <div className="card-body d-flex align-items-center">
+                  <User className="me-2" />
+                  <div>
+                    <p className="mb-0">Revenue This Month</p>
+                    <h6>₹{stats.revenue_this_month || 0}</h6>
+                  </div>
+                </div>
+              </div>
+
+              {stats.top_worker && (
+                <div className="card mb-2">
+                  <div className="card-body d-flex align-items-center">
+                    <User className="me-2" />
+                    <div>
+                      <p className="mb-0">Top Worker</p>
+                      <h6>{stats.top_worker.name} ({stats.top_worker.completed_tasks} tasks)</h6>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

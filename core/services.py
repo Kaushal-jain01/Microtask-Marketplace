@@ -20,8 +20,20 @@ def business_dashboard_stats(user_id):
     data = {
         "posted": Task.objects.filter(created_by=user).count(),
 
+        "open": Task.objects.filter(created_by=user ,
+                                       status__in=['open']
+                                       ).count(),
+
+        "claimed": Task.objects.filter(created_by=user ,
+                                       status__in=['claimed']
+                                       ).count(),
+
         "pending": Task.objects.filter(created_by=user ,
                                        status__in=['completed', 'approved']
+                                       ).count(),
+        
+        "paid": Task.objects.filter(created_by=user ,
+                                       status__in=['paid']
                                        ).count(),
 
         "total_paid_amount": total_paid_amount,

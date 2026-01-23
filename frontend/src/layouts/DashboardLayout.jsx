@@ -1,58 +1,96 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, matchPath } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  ClipboardList,
+  CheckCircle,
+  History,
+  LogOut,
+  User
+} from 'lucide-react';
+import '../styles/DashboardLayout.css';
 import { useAuth } from '../context/AuthContext';
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const sidebarLinks = user?.role === 'worker'
-    ? [
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Claimed Tasks', path: '/dashboard/claimed' },
-        { label: 'Completed Tasks', path: '/dashboard/completed' },
-        { label: 'History', path: '/dashboard/history' },
-      ]
-    : [
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Posted Tasks', path: '/dashboard/posted' },
-        { label: 'History', path: '/dashboard/history' },
-      ];
+  const workerLinks = [
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Claimed Tasks', path: '/dashboard/claimed', icon: ClipboardList },
+    { label: 'Completed Tasks', path: '/dashboard/completed', icon: CheckCircle },
+    { label: 'History', path: '/dashboard/history', icon: History },
+  ];
+
+  const businessLinks = [
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { label: 'Posted Tasks', path: '/dashboard/posted', icon: ClipboardList },
+    { label: 'History', path: '/dashboard/history', icon: History },
+  ];
+
+  const links = user?.role === 'worker' ? workerLinks : businessLinks;
+
+  // Add all route labels here, including dynamic ones
+  const routeTitles = [
+    ...links,
+    { path: '/tasks/create', label: 'Create Task' },
+    { path: '/tasks/detail/:id', label: 'Task Details' },
+  ];
+
+  // Find label based on current location
+  const pageTitle =
+    routeTitles.find(route =>
+      matchPath({ path: route.path, end: true }, location.pathname)
+    )?.label || 'Dashboard';
 
   return (
-    <div className="container-fluid vh-100">
-      <div className="row h-100">
+    <div className="dashboard-layout">
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">TaskFlow</div>
 
-        {/* Sidebar */}
-        <div className="col-2 bg-light p-3 d-flex flex-column border-end">
-          <h5 className="mb-4 fw-bold">Dashboard</h5>
-
-          {sidebarLinks.map(link => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`mb-2 text-decoration-none ${
-                location.pathname === link.path
-                  ? 'fw-bold text-primary'
-                  : 'text-dark'
-              }`}
+        <nav className="sidebar-nav">
+          {links.map(({ label, path, icon: Icon }) => (
+            <NavLink
+              key={path}
+              to={path}
+              end={path === '/dashboard'}
+              className={({ isActive }) =>
+                isActive ? 'sidebar-link active' : 'sidebar-link'
+              }
             >
-              {link.label}
-            </Link>
+              <Icon size={18} />
+              <span>{label}</span>
+            </NavLink>
           ))}
+        </nav>
+      </aside>
 
-          <button
-            className="btn btn-outline-danger mt-auto"
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
+      {/* Main section */}
+      <div className="main-wrapper">
+        {/* Top Navbar */}
+        <header className="topbar">
+          <h2 className="page-title">{pageTitle}</h2>
 
-        {/* Main Content */}
-        <div className="col-10 p-4 overflow-auto">
+          <div className="profile-section">
+            <div className="profile">
+              <User size={18} />
+              <div className="profile-info">
+                <span className="name">{user?.username || 'User'}</span>
+                <span className="role">{user?.role}</span>
+              </div>
+            </div>
+
+            <button className="logout-btn" onClick={logout}>
+              <LogOut size={16} />
+              Logout
+            </button>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="dashboard-main">
           <Outlet />
-        </div>
-
+        </main>
       </div>
     </div>
   );
