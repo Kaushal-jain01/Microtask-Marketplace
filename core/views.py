@@ -60,13 +60,13 @@ class TaskListCreateView(generics.ListCreateAPIView):
             # Tasks claimed by user that are completed
             queryset = queryset.filter(
                 claimed_by=user,
-                status='completed'
+                status__in=['completed', 'approved']
             )
 
         elif type_filter == 'history':
             queryset = queryset.filter(
                 Q(created_by=user) | Q(claimed_by=user),
-                status__in=['completed', 'approved', 'paid']
+                status__in=['paid']
             )
 
         return queryset.order_by('-updated_at')
