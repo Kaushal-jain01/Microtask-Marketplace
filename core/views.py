@@ -47,7 +47,7 @@ class TaskListCreateView(generics.ListCreateAPIView):
 
         if type_filter == 'posted':
             queryset = queryset.filter(
-                Q(created_by=user) & ~Q(status__in=['paid'])
+                Q(created_by=user) & Q(status__in=['open'])
             )
 
         if type_filter == 'claimed':
