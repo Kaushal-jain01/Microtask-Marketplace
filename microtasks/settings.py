@@ -184,8 +184,7 @@ STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "https://task-flow-marketplace-2sty-6bdh4bv1r-kaushal-jains-projects.vercel.app",
+    "http://localhost:3000"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
