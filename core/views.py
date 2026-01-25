@@ -54,7 +54,7 @@ class TaskListCreateView(generics.ListCreateAPIView):
             # Users claimed tasks that are NOT completed, approved, or paid
             queryset = queryset.filter(
                 (Q(claimed_by=user) & ~Q(status__in=['completed', 'approved', 'paid']))
-                | (Q(created_by=user) & ~Q(status__in=['completed', 'approved', 'paid']))
+                | (Q(created_by=user) & Q(status__in=['claimed']))
             )
 
         elif type_filter == 'completed':
