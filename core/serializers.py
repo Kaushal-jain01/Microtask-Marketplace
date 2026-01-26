@@ -12,8 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 # Task
 class TaskSerializer(serializers.ModelSerializer):
-    created_by = UserSerializer()
-    claimed_by = UserSerializer()
+    created_by = UserSerializer(read_only=True)
+    claimed_by = UserSerializer(read_only=True)
 
     class Meta:
         model = Task
@@ -42,7 +42,7 @@ class TaskSerializer(serializers.ModelSerializer):
 
 # Task Completion
 class TaskCompletionSerializer(serializers.ModelSerializer):
-    completed_by = UserSerializer()
+    completed_by = UserSerializer(read_only=True)
 
     class Meta:
         model = TaskCompletion
@@ -112,7 +112,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 # Profile View / Update
 class ProfileSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = UserProfile
